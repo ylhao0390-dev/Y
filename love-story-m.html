@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YJY</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-text: #3D3A38;
+            --color-text-light: #5A5754;
+            --color-overlay: rgba(247, 245, 242, 0.75);
+            --color-overlay-dark: rgba(40, 38, 36, 0.35);
+            --font-main: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-snap-type: y mandatory;
+        }
+
+        body {
+            font-family: var(--font-main);
+            font-weight: 300;
+            color: var(--color-text);
+            background: #F5F3F0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 微颗粒纹理 */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            z-index: 9999;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* ===== 右上角导航 ===== */
+        .nav-top {
+            position: fixed;
+            top: 0;
+            right: 0;
+            padding: 20px 24px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            opacity: 0;
+            animation: fadeIn 1s ease 0.8s forwards;
+        }
+
+        .nav-link {
+            font-family: var(--font-main);
+            font-size: 13px;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            color: var(--color-text-light);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 0;
+            position: relative;
+            transition: color 0.3s ease;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            color: var(--color-text);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--color-text);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .nav-link.active {
+            color: var(--color-text);
+        }
+
+        /* ===== 道歉信纸张层 ===== */
+        .letter-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        .letter-layer.visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        /* 半透明背景 */
+        .letter-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(245, 243, 240, 0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* 纸张容器 */
+        .letter-paper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateY(30px);
+            width: 90%;
+            max-width: 560px;
+            max-height: 82vh;
+            background: #FFFEFA;
+            box-shadow: 
+                0 1px 3px rgba(0,0,0,0.04),
+                0 4px 12px rgba(0,0,0,0.06),
+                0 12px 32px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .letter-layer.visible .letter-paper {
+            transform: translate(-50%, -50%) translateY(0);
+        }
+
+        /* 纸张纹理 */
+        .letter-paper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* 纸张内容 */
+        .letter-content {
+            padding: 56px 48px 64px;
+            position: relative;
+        }
+
+        .letter-title {
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0.2em;
+            color: var(--color-text);
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .letter-salutation {
+            font-size: 15px;
+            line-height: 2;
+            margin-bottom: 24px;
+            color: var(--color-text);
+        }
+
+        .letter-body {
+            font-size: 15px;
+            line-height: 2.3;
+            color: var(--color-text);
+            text-align: justify;
+        }
+
+        .letter-body p {
+            text-indent: 2em;
+            margin-bottom: 20px;
+        }
+
+        .letter-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        .letter-signature {
+            margin-top: 56px;
+            text-align: right;
+            font-size: 15px;
+            color: var(--color-text);
+            line-height: 2;
+        }
+
+        .letter-signature .name {
+            letter-spacing: 0.1em;
+        }
+
+        .letter-signature .date {
+            color: var(--color-text-light);
+            font-size: 14px;
+        }
+
+        /* ===== 音乐控制按钮 ===== */
+        .music-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 24px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid rgba(61, 58, 56, 0.12);
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            cursor: pointer;
+            z-index: 1002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s ease;
+            opacity: 0;
+            animation: fadeIn 1.5s ease 2s forwards;
+        }
+
+        .music-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+            border-color: rgba(61, 58, 56, 0.2);
+        }
+
+        .music-btn svg {
+            width: 13px;
+            height: 13px;
+            fill: var(--color-text-light);
+            transition: all 0.3s ease;
+        }
+
+        .music-btn.playing .icon-play { display: none; }
+        .music-btn:not(.playing) .icon-pause { display: none; }
+
+        .music-btn.playing::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1px solid rgba(61, 58, 56, 0.08);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.3); opacity: 0; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ===== 每一页 Section ===== */
+        .page {
+            min-height: 100vh;
+            min-height: 100dvh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 28px 100px;
+            position: relative;
+            scroll-snap-align: start;
+            overflow: hidden;
+        }
+
+        .page-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 0;
+        }
+
+        /* 手机端（竖屏）使用 9:16 的图片，命名为 A-m.jpg, B-m.jpg 等 */
+        @media (max-aspect-ratio: 1/1) {
+            .page[data-page="1"] .page-bg {
+                background-image: url('A-m.jpg') !important;
+            }
+            .page[data-page="2"] .page-bg {
+                background-image: url('B-m.jpg') !important;
+            }
+            .page[data-page="3"] .page-bg {
+                background-image: url('C-m.jpg') !important;
+            }
+            .page[data-page="4"] .page-bg {
+                background-image: url('D-m.jpg') !important;
+            }
+            .page[data-page="5"] .page-bg {
+                background-image: url('E-m.jpg') !important;
+            }
+            .page[data-page="6"] .page-bg {
+                background-image: url('F-m.jpg') !important;
+            }
+            .page[data-page="7"] .page-bg {
+                background-image: url('G-m.png') !important;
+            }
+        }
+
+        .page-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--color-overlay);
+            z-index: 1;
+        }
+
+        .page.dark .page-overlay {
+            background: var(--color-overlay-dark);
+        }
+
+        .page.dark .page-text {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .page-content {
+            position: relative;
+            z-index: 2;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* ===== 每页独立位置控制 ===== */
+        
+        .page[data-page="1"] {
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 28vh;
+        }
+        .page[data-page="1"] .page-content {
+            margin: 0;
+            text-align: center;
+        }
+
+        .page[data-page="2"] {
+            align-items: center;
+            justify-content: flex-start;
+            padding-left: 12vw;
+        }
+        .page[data-page="2"] .page-content {
+            margin: 0;
+            text-align: left;
+        }
+
+        .page[data-page="3"] {
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding-bottom: 25vh;
+            padding-right: 10vw;
+        }
+        .page[data-page="3"] .page-content {
+            margin: 0;
+            text-align: right;
+        }
+
+        .page[data-page="4"] {
+            align-items: center;
+            justify-content: flex-start;
+            padding-left: 10vw;
+        }
+        .page[data-page="4"] .page-content {
+            margin: 0;
+            text-align: left;
+        }
+
+        .page[data-page="5"] {
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 18vh;
+        }
+        .page[data-page="5"] .page-content {
+            margin: 0;
+            text-align: center;
+        }
+
+        .page[data-page="6"] {
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 12vw;
+        }
+        .page[data-page="6"] .page-content {
+            margin-top: 12vh;
+            text-align: right;
+        }
+
+        .page[data-page="7"] {
+            align-items: center;
+            justify-content: center;
+        }
+        .page[data-page="7"] .page-content {
+            margin: 0;
+            text-align: center;
+        }
+
+        .page-text {
+            font-size: clamp(18px, 4.5vw, 24px);
+            line-height: 2;
+            letter-spacing: 0.04em;
+            font-weight: 300;
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 1.4s ease-out, transform 1.4s ease-out;
+        }
+
+        .page-text.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .page.opening .page-text {
+            font-size: clamp(22px, 5.5vw, 30px);
+            letter-spacing: 0.12em;
+            font-weight: 400;
+        }
+
+        .page.closing .page-text {
+            font-size: clamp(20px, 5vw, 28px);
+            letter-spacing: 0.1em;
+            font-weight: 400;
+        }
+
+        .page.opening .page-text {
+            transition-delay: 0.6s;
+        }
+
+        /* 滚动提示 */
+        .scroll-hint {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            animation: fadeIn 1s ease 3s forwards, float 2.5s ease-in-out 3s infinite;
+            z-index: 2;
+        }
+
+        .scroll-hint span {
+            display: block;
+            width: 1px;
+            height: 40px;
+            background: linear-gradient(to bottom, transparent, var(--color-text-light), transparent);
+            opacity: 0.4;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* ===== 移动端适配 ===== */
+        @media (max-width: 640px) {
+            .nav-top {
+                padding: 16px 20px;
+                gap: 4px;
+            }
+
+            .nav-link {
+                font-size: 12px;
+            }
+
+            .letter-content {
+                padding: 40px 28px 48px;
+            }
+
+            .letter-title {
+                font-size: 13px;
+                margin-bottom: 36px;
+            }
+
+            .letter-salutation,
+            .letter-body {
+                font-size: 14px;
+                line-height: 2.2;
+            }
+
+            .letter-signature {
+                margin-top: 44px;
+                font-size: 14px;
+            }
+
+            .page {
+                padding: 50px 24px 80px;
+            }
+
+            .page[data-page="2"],
+            .page[data-page="4"] {
+                padding-left: 24px;
+                justify-content: center;
+            }
+            .page[data-page="2"] .page-content,
+            .page[data-page="4"] .page-content {
+                text-align: center;
+            }
+
+            .page[data-page="3"] {
+                padding-right: 24px;
+                justify-content: center;
+            }
+            .page[data-page="3"] .page-content {
+                text-align: center;
+            }
+
+            .page[data-page="6"] {
+                padding-right: 24px;
+                justify-content: center;
+            }
+            .page[data-page="6"] .page-content {
+                text-align: center;
+            }
+
+            .page-text {
+                line-height: 2.1;
+            }
+
+            .music-btn {
+                bottom: 16px;
+                right: 20px;
+                width: 32px;
+                height: 32px;
+            }
+
+            .music-btn svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            .scroll-hint {
+                bottom: 30px;
+            }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .page {
+                min-height: auto;
+                padding: 40px 24px;
+            }
+        }
+
+        /* 隐藏滚动条但保持滚动功能 */
+        .letter-paper::-webkit-scrollbar {
+            width: 0;
+        }
+
+        /* ===== 底部音乐进度条与小狗 ===== */
+        .music-progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 32px;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            background: linear-gradient(to top, rgba(245, 243, 240, 0.95), rgba(245, 243, 240, 0));
+        }
+
+        .music-progress-bar.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .progress-track {
+            position: absolute;
+            bottom: 12px;
+            left: 24px;
+            right: 24px;
+            height: 1px;
+            background: rgba(61, 58, 56, 0.15);
+        }
+
+        .progress-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0%;
+            background: rgba(61, 58, 56, 0.4);
+            transition: width 0.1s linear;
+        }
+
+        /* 小狗图片 */
+        .dog-runner {
+            position: absolute;
+            bottom: 8px;
+            left: 24px;
+            transform: translateX(-50%);
+            transition: left 0.1s linear;
+        }
+
+        .dog-runner img {
+            width: 40px;
+            height: auto;
+            image-rendering: auto;
+        }
+
+        /* 小狗跑步动画 */
+        .dog-runner.running img {
+            animation: dogBounce 0.25s ease-in-out infinite;
+        }
+
+        @keyframes dogBounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-4px) rotate(-2deg); }
+            75% { transform: translateY(-4px) rotate(2deg); }
+        }
+
+        @media (max-width: 640px) {
+            .music-progress-bar {
+                height: 40px;
+            }
+
+            .progress-track {
+                bottom: 16px;
+                left: 16px;
+                right: 16px;
+            }
+
+            .dog-runner {
+                left: 16px;
+                bottom: 10px;
+            }
+
+            .dog-runner img {
+                width: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 右上角导航 -->
+    <nav class="nav-top">
+        <button class="nav-link" id="letterToggle">道歉信</button>
+    </nav>
+
+    <!-- 道歉信纸张层 -->
+    <div class="letter-layer" id="letterLayer">
+        <div class="letter-backdrop" id="letterBackdrop"></div>
+        <div class="letter-paper">
+            <div class="letter-content">
+                <div class="letter-title">道 歉 信</div>
+                <div class="letter-salutation">亲爱的宝宝：</div>
+                <div class="letter-body">
+                    <p>对不起。</p>
+                    <p>今天中午你跟我分享点了好辣的菜，还去了水果店，店里在播放恭喜发财，真的很开心。但是我看了时间却认为你还在吃饭并且稍后打算去水果店，所以就打断了你的分享，虽然我的初衷是希望你好好吃饭不要影响你，但可能因此让你产生了误解让你不开心。</p>
+                    <p>对不起！我真是太坏了，你愿意分享给我告诉我你的日常我真的很开心，而且是非常开心而且我很愿意认真的回应你，但是我没有理解清楚宝宝的意思并且还中断了宝宝的分享欲，以及那段对话像是在拒绝宝宝的分享一样。如果给了宝宝这种感觉那我真的是千古罪人啦！在空下来以后立刻想到了这件事情，并且深刻的认识到了自己的错误，对此给宝宝造成了影响我深感抱歉。</p>
+                    <p>希望我的宝宝大人有大量，大人不记小人过，宰相肚里能撑船原谅我嘛。本人进行了深刻并积极的反思，将此次的行为过错牢记于心，避免以后类似情况的发生，并对此予以保证，接下来也会用自己的实际行动以弥补此次事件对宝宝的影响。</p>
+                </div>
+                <div class="letter-signature">
+                    <div class="name">YXG</div>
+                    <div class="date">2026.2.2</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音乐播放器 -->
+    <button class="music-btn" id="musicBtn" aria-label="播放音乐">
+        <svg class="icon-play" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+        </svg>
+        <svg class="icon-pause" viewBox="0 0 24 24">
+            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+        </svg>
+    </button>
+
+    <!-- 背景音乐 -->
+    <audio id="bgMusic" loop preload="none">
+        <source src="Midnight Call.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 底部音乐进度条与小狗 -->
+    <div class="music-progress-bar" id="progressBar">
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="dog-runner" id="dogRunner">
+            <img src="data:image/png;base64,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" alt="小狗" />
+        </div>
+    </div>
+
+    <!-- 第 1 页：Opening -->
+    <section class="page opening" data-page="1">
+        <div class="page-bg" style="background-image: url('A.jpg');"></div>
+        <div class="page-overlay"></div>
+        <div class="page-content">
+            <p class="page-text">我想你</p>
+        </div>
+        <div class="scroll-hint"><span></span></div>
+    </section>
+
+    <!-- 第 2 页 -->
+    <section class="page" data-page="2">
+        <div class="page-bg" style="background-image: url('B.jpg');"></div>
+        <div class="page-overlay"></div>
+        <div class="page-content">
+            <p class="page-text">一直告诉你和你在一起很开心。</p>
+        </div>
+    </section>
+
+    <!-- 第 3 页 -->
+    <section class="page" data-page="3">
+        <div class="page-bg" style="background-image: url('C.jpg');"></div>
+        <div class="page-overlay"></div>
+        <div class="page-content">
+            <p class="page-text">但其实每次看到你的消息，也都会心头一紧。</p>
+        </div>
+    </section>
+
+    <!-- 第 4 页 -->
+    <section class="page" data-page="4">
+        <div class="page-bg" style="background-image: url('D.jpg');"></div>
+        <div class="page-overlay"></div>
+        <div class="page-content">
+            <p class="page-text">无论什么时候我都会很开心听你给我分享任何事情，只要与你有关，我都会很认真的感受。</p>
+        </div>
+    </section>
+
+    <!-- 第 5 页 -->
+    <section class="page" data-page="5">
+        <div class="page-bg" style="background-image: url('E.jpg');"></div>
+        <div class="page-overlay"></div>
+        <div class="page-content">
+            <p class="page-text">不过有时可能因为我的一些习惯，会忽视你的情绪和感受，这在惹你不开心的同时，也在困扰着我自己。</p>
+        </div>
+    </section>
+
+    <!-- 第 6 页 -->
+    <section class="page" data-page="6">
+        <div class="page-bg" style="background-image: url('F.jpg');"></div>
+        <div class="page-overlay"></div>
+        <div class="page-content">
+            <p class="page-text">我在意你，也在意自己该怎样更好的对待你。</p>
+        </div>
+    </section>
+
+    <!-- 第 7 页：Closing -->
+    <section class="page closing" data-page="7">
+        <div class="page-bg" style="background-image: url('G.png');"></div>
+        <div class="page-overlay"></div>
+        <div class="page-content">
+            <p class="page-text">我爱你</p>
+        </div>
+    </section>
+
+    <script>
+        // ========== 道歉信展开/收起 ==========
+        const letterToggle = document.getElementById('letterToggle');
+        const letterLayer = document.getElementById('letterLayer');
+        const letterBackdrop = document.getElementById('letterBackdrop');
+        let letterVisible = false;
+
+        function toggleLetter() {
+            letterVisible = !letterVisible;
+            if (letterVisible) {
+                letterLayer.classList.add('visible');
+                letterToggle.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                letterLayer.classList.remove('visible');
+                letterToggle.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        letterToggle.addEventListener('click', toggleLetter);
+        letterBackdrop.addEventListener('click', toggleLetter);
+
+        // ========== 滚动触发动画 ==========
+        const textElements = document.querySelectorAll('.page-text');
+        
+        const observerOptions = {
+            root: null,
+            rootMargin: '-10% 0px -10% 0px',
+            threshold: 0.3
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        textElements.forEach(el => observer.observe(el));
+
+        // 首页文字立即显示
+        const firstPageText = document.querySelector('.page.opening .page-text');
+        setTimeout(() => {
+            firstPageText.classList.add('visible');
+        }, 100);
+
+        // ========== 音乐控制 ==========
+        const musicBtn = document.getElementById('musicBtn');
+        const bgMusic = document.getElementById('bgMusic');
+        let isFading = false;
+
+        bgMusic.volume = 0;
+        const targetVolume = 0.2;
+
+        function fadeInVolume(duration = 2000) {
+            if (isFading) return;
+            isFading = true;
+            const startTime = Date.now();
+            const startVolume = bgMusic.volume;
+            
+            const fade = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - (1 - progress) * (1 - progress);
+                bgMusic.volume = startVolume + (targetVolume - startVolume) * eased;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(fade);
+                } else {
+                    isFading = false;
+                }
+            };
+            fade();
+        }
+
+        function fadeOutVolume(duration = 800) {
+            if (isFading) return;
+            isFading = true;
+            const startTime = Date.now();
+            const startVolume = bgMusic.volume;
+            
+            const fade = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                bgMusic.volume = startVolume * (1 - progress);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(fade);
+                } else {
+                    bgMusic.pause();
+                    isFading = false;
+                }
+            };
+            fade();
+        }
+
+        // 自动播放
+        function tryAutoPlay() {
+            bgMusic.play().then(() => {
+                musicBtn.classList.add('playing');
+                fadeInVolume(2500);
+            }).catch(err => {
+                document.addEventListener('click', function playOnce(e) {
+                    if (e.target.closest('.letter-layer')) return;
+                    bgMusic.play().then(() => {
+                        musicBtn.classList.add('playing');
+                        fadeInVolume(2500);
+                    });
+                    document.removeEventListener('click', playOnce);
+                }, { once: true });
+            });
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(tryAutoPlay, 500);
+        });
+
+        musicBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (bgMusic.paused) {
+                bgMusic.play().then(() => {
+                    musicBtn.classList.add('playing');
+                    fadeInVolume(2500);
+                });
+            } else {
+                musicBtn.classList.remove('playing');
+                fadeOutVolume(800);
+            }
+        });
+
+        // ========== 小狗进度条控制 ==========
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const dogRunner = document.getElementById('dogRunner');
+        const progressTrack = document.querySelector('.progress-track');
+
+        // 显示/隐藏进度条
+        bgMusic.addEventListener('play', () => {
+            progressBar.classList.add('visible');
+            dogRunner.classList.add('running');
+        });
+
+        bgMusic.addEventListener('pause', () => {
+            dogRunner.classList.remove('running');
+        });
+
+        bgMusic.addEventListener('ended', () => {
+            progressBar.classList.remove('visible');
+            dogRunner.classList.remove('running');
+        });
+
+        // 更新进度
+        bgMusic.addEventListener('timeupdate', () => {
+            if (bgMusic.duration) {
+                const percent = (bgMusic.currentTime / bgMusic.duration) * 100;
+                progressFill.style.width = percent + '%';
+                
+                // 计算小狗位置
+                const trackWidth = progressTrack.offsetWidth;
+                const dogPosition = 24 + (trackWidth * percent / 100); // 24px 是左边距
+                dogRunner.style.left = dogPosition + 'px';
+            }
+        });
+
+        // ========== 隐藏首页滚动提示 ==========
+        const scrollHint = document.querySelector('.scroll-hint');
+        let hintHidden = false;
+
+        window.addEventListener('scroll', () => {
+            if (!hintHidden && window.scrollY > 100) {
+                scrollHint.style.opacity = '0';
+                scrollHint.style.transition = 'opacity 0.6s ease';
+                hintHidden = true;
+            }
+        }, { passive: true });
+    </script>
+</body>
+</html>
