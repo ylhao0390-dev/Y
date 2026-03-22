@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Y — Creative Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Reset & Base ──────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:      #0c0c0b;
+      --bg2:     #111110;
+      --fg:      #e8e4dc;
+      --fg2:     #7a7670;
+      --accent:  #c8b89a;
+      --serif:   'Cormorant Garamond', Georgia, serif;
+      --sans:    'Inter', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      font-weight: 300;
+      font-size: 15px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      cursor: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+    /* ─── Custom Cursor ─────────────────────────────────────────── */
+    #cursor {
+      position: fixed;
+      top: 0; left: 0;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width .25s, height .25s, opacity .25s;
+      mix-blend-mode: difference;
+    }
+    #cursor.hover {
+      width: 48px; height: 48px;
+      opacity: .6;
+    }
+    #cursor.hidden { opacity: 0; }
+
+    /* ─── Noise overlay ─────────────────────────────────────────── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 9990;
+      opacity: .025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ─── Nav ───────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 28px 48px;
+      z-index: 100;
+      mix-blend-mode: normal;
+    }
+    nav::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(12,12,11,.9) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .nav-logo {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: .08em;
+      position: relative;
+    }
+    .nav-links {
+      display: flex; gap: 40px;
+      list-style: none;
+      position: relative;
+    }
+    .nav-links a {
+      font-size: 12px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--fg2);
+      transition: color .3s;
+    }
+    .nav-links a:hover { color: var(--fg); }
+
+    /* ─── Hero ──────────────────────────────────────────────────── */
+    #hero {
+      position: relative;
+      height: 100vh;
+      display: flex; flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 48px 60px;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background: var(--bg);
+    }
+    .hero-bg img {
+      opacity: .35;
+      transform: scale(1.05);
+      transition: transform 8s ease;
+    }
+    .hero-bg::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, var(--bg) 20%, transparent 70%);
+    }
+    .hero-label {
+      position: relative;
+      font-size: 11px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp .8s .3s forwards;
+    }
+    .hero-title {
+      position: relative;
+      font-family: var(--serif);
+      font-size: clamp(60px, 10vw, 140px);
+      font-weight: 300;
+      line-height: .92;
+      letter-spacing: -.01em;
+      overflow: hidden;
+    }
+    .hero-title .line {
+      display: block;
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    .hero-title .line:nth-child(1) { animation: slideUp .9s .5s cubic-bezier(.16,1,.3,1) forwards; }
+    .hero-title .line:nth-child(2) { animation: slideUp .9s .65s cubic-bezier(.16,1,.3,1) forwards; padding-left: 2em; font-style: italic; }
+    .hero-subtitle {
+      position: relative;
+      margin-top: 40px;
+      max-width: 380px;
+      font-size: 13px;
+      color: var(--fg2);
+      line-height: 1.8;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp .8s 1s forwards;
+    }
+    .hero-scroll {
+      position: absolute;
+      right: 48px; bottom: 60px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      opacity: 0;
+      animation: fadeUp .8s 1.2s forwards;
+    }
+    .hero-scroll span {
+      font-size: 10px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--fg2);
+      writing-mode: vertical-rl;
+    }
+    .scroll-line {
+      width: 1px; height: 60px;
+      background: var(--fg2);
+      position: relative;
+      overflow: hidden;
+    }
+    .scroll-line::after {
+      content: '';
+      position: absolute;
+      top: -100%; left: 0; right: 0;
+      height: 100%;
+      background: var(--accent);
+      animation: scrollAnim 1.8s ease infinite;
+    }
+
+    /* ─── Section common ────────────────────────────────────────── */
+    section { padding: 120px 48px; }
+    .section-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 72px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      padding-top: 28px;
+    }
+    .section-num {
+      font-size: 11px;
+      letter-spacing: .2em;
+      color: var(--accent);
+    }
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(36px, 5vw, 72px);
+      font-weight: 300;
+      line-height: 1;
+    }
+    .section-link {
+      font-size: 12px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--fg2);
+      display: flex; align-items: center; gap: 8px;
+      transition: color .3s;
+    }
+    .section-link::after {
+      content: '→';
+      transition: transform .3s;
+    }
+    .section-link:hover { color: var(--fg); }
+    .section-link:hover::after { transform: translateX(4px); }
+
+    /* ─── Works Grid ────────────────────────────────────────────── */
+    #works { background: var(--bg); }
+    .works-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    .work-item {
+      overflow: hidden;
+      position: relative;
+      background: var(--bg2);
+      cursor: none;
+    }
+    .work-item:nth-child(1) { grid-column: 1 / 8; grid-row: 1; }
+    .work-item:nth-child(2) { grid-column: 8 / 13; grid-row: 1; }
+    .work-item:nth-child(3) { grid-column: 1 / 5; grid-row: 2; }
+    .work-item:nth-child(4) { grid-column: 5 / 10; grid-row: 2; }
+    .work-item:nth-child(5) { grid-column: 10 / 13; grid-row: 2; }
+    .work-item:nth-child(6) { grid-column: 1 / 7; grid-row: 3; }
+    .work-item:nth-child(7) { grid-column: 7 / 13; grid-row: 3; }
+
+    .work-thumb {
+      aspect-ratio: 16/10;
+      overflow: hidden;
+    }
+    .work-item:nth-child(1) .work-thumb,
+    .work-item:nth-child(6) .work-thumb,
+    .work-item:nth-child(7) .work-thumb { aspect-ratio: 16/9; }
+    .work-item:nth-child(2) .work-thumb,
+    .work-item:nth-child(3) .work-thumb { aspect-ratio: 4/5; }
+
+    .work-thumb img {
+      transition: transform .8s cubic-bezier(.16,1,.3,1), filter .4s;
+      filter: brightness(.8) saturate(.7);
+    }
+    .work-item:hover .work-thumb img {
+      transform: scale(1.06);
+      filter: brightness(.95) saturate(1);
+    }
+    .work-info {
+      padding: 20px 24px 24px;
+      display: flex; align-items: baseline; justify-content: space-between;
+    }
+    .work-title {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 300;
+      letter-spacing: .02em;
+    }
+    .work-tag {
+      font-size: 10px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--fg2);
+    }
+    .work-hover-overlay {
+      position: absolute; inset: 0;
+      background: rgba(12,12,11,.6);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity .4s;
+    }
+    .work-item:hover .work-hover-overlay { opacity: 1; }
+    .view-btn {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: 1px solid var(--fg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      transform: scale(.7);
+      transition: transform .4s cubic-bezier(.16,1,.3,1);
+    }
+    .work-item:hover .view-btn { transform: scale(1); }
+
+    /* ─── About ─────────────────────────────────────────────────── */
+    #about {
+      background: var(--bg2);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: start;
+    }
+    .about-left {}
+    .about-right { padding-top: 40px; }
+    .about-portrait {
+      aspect-ratio: 3/4;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .about-portrait img { filter: grayscale(.3); }
+    .about-text {
+      font-family: var(--serif);
+      font-size: clamp(22px, 2.5vw, 34px);
+      font-weight: 300;
+      line-height: 1.4;
+      color: var(--fg);
+      margin-bottom: 40px;
+    }
+    .about-body {
+      font-size: 13px;
+      line-height: 1.9;
+      color: var(--fg2);
+      margin-bottom: 48px;
+    }
+    .about-stats {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      padding-top: 32px;
+    }
+    .stat-num {
+      font-family: var(--serif);
+      font-size: 48px;
+      font-weight: 300;
+      color: var(--fg);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 11px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--fg2);
+      margin-top: 8px;
+    }
+
+    /* ─── Services ──────────────────────────────────────────────── */
+    #services { background: var(--bg); }
+    .services-list {
+      display: flex; flex-direction: column;
+    }
+    .service-item {
+      display: flex; align-items: baseline;
+      padding: 36px 0;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      gap: 48px;
+      transition: padding-left .4s cubic-bezier(.16,1,.3,1);
+    }
+    .service-item:hover { padding-left: 24px; }
+    .service-item:first-child { border-top: 1px solid rgba(255,255,255,.06); }
+    .service-num {
+      font-size: 11px;
+      letter-spacing: .15em;
+      color: var(--accent);
+      min-width: 36px;
+    }
+    .service-name {
+      font-family: var(--serif);
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 300;
+      flex: 1;
+    }
+    .service-desc {
+      font-size: 12px;
+      color: var(--fg2);
+      line-height: 1.8;
+      max-width: 280px;
+    }
+
+    /* ─── Marquee ────────────────────────────────────────────────── */
+    .marquee-section {
+      overflow: hidden;
+      border-top: 1px solid rgba(255,255,255,.06);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      padding: 24px 0;
+      background: var(--bg2);
+    }
+    .marquee-track {
+      display: flex; gap: 0;
+      white-space: nowrap;
+      animation: marquee 20s linear infinite;
+    }
+    .marquee-item {
+      font-family: var(--serif);
+      font-size: 48px;
+      font-weight: 300;
+      font-style: italic;
+      color: rgba(255,255,255,.06);
+      padding: 0 48px;
+      flex-shrink: 0;
+    }
+    .marquee-item span {
+      color: var(--accent);
+      font-style: normal;
+      font-size: 12px;
+      vertical-align: middle;
+      margin: 0 24px;
+      letter-spacing: .2em;
+    }
+
+    /* ─── Contact ───────────────────────────────────────────────── */
+    #contact {
+      background: var(--bg);
+      text-align: center;
+      padding: 160px 48px;
+    }
+    .contact-eyebrow {
+      font-size: 11px;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 32px;
+    }
+    .contact-title {
+      font-family: var(--serif);
+      font-size: clamp(52px, 9vw, 120px);
+      font-weight: 300;
+      line-height: .9;
+      margin-bottom: 64px;
+    }
+    .contact-title em { font-style: italic; color: var(--fg2); }
+    .contact-btn {
+      display: inline-flex;
+      align-items: center; gap: 16px;
+      border: 1px solid rgba(255,255,255,.15);
+      padding: 18px 40px;
+      font-size: 12px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--fg);
+      transition: background .3s, border-color .3s, gap .3s;
+    }
+    .contact-btn:hover {
+      background: rgba(255,255,255,.05);
+      border-color: rgba(255,255,255,.3);
+      gap: 24px;
+    }
+    .contact-btn::after { content: '→'; }
+
+    /* ─── Footer ────────────────────────────────────────────────── */
+    footer {
+      background: var(--bg2);
+      padding: 40px 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .footer-logo {
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 300;
+      letter-spacing: .06em;
+    }
+    .footer-links {
+      display: flex; gap: 32px; list-style: none;
+    }
+    .footer-links a {
+      font-size: 11px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--fg2);
+      transition: color .3s;
+    }
+    .footer-links a:hover { color: var(--fg); }
+    .footer-copy {
+      font-size: 11px;
+      color: var(--fg2);
+      letter-spacing: .08em;
+    }
+
+    /* ─── Scroll-reveal ─────────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── Keyframes ─────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scrollAnim {
+      0%   { top: -100%; }
+      50%  { top: 100%; }
+      100% { top: 100%; }
+    }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ─── Mobile ────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      nav { padding: 24px 24px; }
+      .nav-links { gap: 24px; }
+      .nav-links li:nth-child(1),
+      .nav-links li:nth-child(2) { display: none; }
+      section { padding: 80px 24px; }
+      #hero { padding: 0 24px 48px; }
+      .hero-scroll { right: 24px; bottom: 48px; }
+      #about {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        padding: 80px 24px;
+      }
+      .works-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .work-item:nth-child(n) {
+        grid-column: 1; grid-row: auto;
+      }
+      .section-header { flex-wrap: wrap; gap: 16px; }
+      .service-item { flex-wrap: wrap; gap: 16px; }
+      .service-desc { max-width: 100%; }
+      footer {
+        flex-direction: column;
+        gap: 24px;
+        text-align: center;
+        padding: 32px 24px;
+      }
+      .footer-links { flex-wrap: wrap; justify-content: center; }
+      #contact { padding: 100px 24px; }
+      body { cursor: auto; }
+      #cursor { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cursor -->
+  <div id="cursor"></div>
+
+  <!-- Nav -->
+  <nav>
+    <a href="#" class="nav-logo">Y.</a>
+    <ul class="nav-links">
+      <li><a href="#works">Work</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section id="hero">
+    <div class="hero-bg">
+      <img src="A.jpg" alt="" id="heroBg">
+    </div>
+    <p class="hero-label">Creative Portfolio — 2024</p>
+    <h1 class="hero-title">
+      <span class="line">Crafting</span>
+      <span class="line">Experiences</span>
+    </h1>
+    <p class="hero-subtitle">
+      Visual design &amp; art direction — building digital spaces that feel as alive as the ideas behind them.
+    </p>
+    <div class="hero-scroll">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+  </section>
+
+  <!-- Marquee -->
+  <div class="marquee-section">
+    <div class="marquee-track">
+      <div class="marquee-item">Visual Design <span>✦</span></div>
+      <div class="marquee-item">Art Direction <span>✦</span></div>
+      <div class="marquee-item">Photography <span>✦</span></div>
+      <div class="marquee-item">Motion <span>✦</span></div>
+      <div class="marquee-item">Identity <span>✦</span></div>
+      <div class="marquee-item">Visual Design <span>✦</span></div>
+      <div class="marquee-item">Art Direction <span>✦</span></div>
+      <div class="marquee-item">Photography <span>✦</span></div>
+      <div class="marquee-item">Motion <span>✦</span></div>
+      <div class="marquee-item">Identity <span>✦</span></div>
+    </div>
+  </div>
+
+  <!-- Works -->
+  <section id="works">
+    <div class="section-header reveal">
+      <div>
+        <p class="section-num">01 — Selected Works</p>
+        <h2 class="section-title">Projects</h2>
+      </div>
+      <a href="#" class="section-link">View all</a>
+    </div>
+    <div class="works-grid">
+      <div class="work-item reveal">
+        <div class="work-thumb"><img src="B.jpg" alt="Project Lumière"></div>
+        <div class="work-hover-overlay"><div class="view-btn">View</div></div>
+        <div class="work-info">
+          <span class="work-title">Lumière</span>
+          <span class="work-tag">Photography</span>
+        </div>
+      </div>
+      <div class="work-item reveal" style="transition-delay:.1s">
+        <div class="work-thumb"><img src="C.jpg" alt="Project Soleil"></div>
+        <div class="work-hover-overlay"><div class="view-btn">View</div></div>
+        <div class="work-info">
+          <span class="work-title">Soleil</span>
+          <span class="work-tag">Art Direction</span>
+        </div>
+      </div>
+      <div class="work-item reveal" style="transition-delay:.05s">
+        <div class="work-thumb"><img src="D.jpg" alt="Project Miroir"></div>
+        <div class="work-hover-overlay"><div class="view-btn">View</div></div>
+        <div class="work-info">
+          <span class="work-title">Miroir</span>
+          <span class="work-tag">Visual Design</span>
+        </div>
+      </div>
+      <div class="work-item reveal" style="transition-delay:.15s">
+        <div class="work-thumb"><img src="E.jpg" alt="Project Ombre"></div>
+        <div class="work-hover-overlay"><div class="view-btn">View</div></div>
+        <div class="work-info">
+          <span class="work-title">Ombre</span>
+          <span class="work-tag">Photography</span>
+        </div>
+      </div>
+      <div class="work-item reveal" style="transition-delay:.2s">
+        <div class="work-thumb"><img src="F.jpg" alt="Project Éclat"></div>
+        <div class="work-hover-overlay"><div class="view-btn">View</div></div>
+        <div class="work-info">
+          <span class="work-title">Éclat</span>
+          <span class="work-tag">Identity</span>
+        </div>
+      </div>
+      <div class="work-item reveal" style="transition-delay:.08s">
+        <div class="work-thumb"><img src="G.png" alt="Project Aurora"></div>
+        <div class="work-hover-overlay"><div class="view-btn">View</div></div>
+        <div class="work-info">
+          <span class="work-title">Aurora</span>
+          <span class="work-tag">Motion</span>
+        </div>
+      </div>
+      <div class="work-item reveal" style="transition-delay:.18s">
+        <div class="work-thumb"><img src="A.jpg" alt="Project Ciel"></div>
+        <div class="work-hover-overlay"><div class="view-btn">View</div></div>
+        <div class="work-info">
+          <span class="work-title">Ciel</span>
+          <span class="work-tag">Visual Design</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section id="about">
+    <div class="about-left">
+      <div class="section-header reveal" style="margin-bottom:0">
+        <div>
+          <p class="section-num">02 — About</p>
+          <h2 class="section-title">The<br>Story</h2>
+        </div>
+      </div>
+      <div class="about-portrait reveal">
+        <img src="C.jpg" alt="Portrait">
+      </div>
+    </div>
+    <div class="about-right">
+      <p class="about-text reveal">
+        A designer obsessed with the spaces between things — negative space, quiet moments, the pause before the word.
+      </p>
+      <p class="about-body reveal">
+        With years of practice across visual identity, editorial photography, and art direction, the work lives at the intersection of restraint and expression. Every project begins with listening — to the brief, to the image, to the silence that tells you where to go next.<br><br>
+        Based between studios and open skies, the practice spans brand identities, motion pieces, and long-form photographic essays that question how we see the everyday.
+      </p>
+      <div class="about-stats reveal">
+        <div>
+          <div class="stat-num">7+</div>
+          <div class="stat-label">Years of practice</div>
+        </div>
+        <div>
+          <div class="stat-num">40+</div>
+          <div class="stat-label">Projects delivered</div>
+        </div>
+        <div>
+          <div class="stat-num">12</div>
+          <div class="stat-label">Awards & recognitions</div>
+        </div>
+        <div>
+          <div class="stat-num">∞</div>
+          <div class="stat-label">Curiosity</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services">
+    <div class="section-header reveal">
+      <div>
+        <p class="section-num">03 — What I Do</p>
+        <h2 class="section-title">Services</h2>
+      </div>
+    </div>
+    <div class="services-list">
+      <div class="service-item reveal">
+        <span class="service-num">01</span>
+        <span class="service-name">Visual Design</span>
+        <span class="service-desc">Crafting visual systems that carry meaning — from typography to colour to space.</span>
+      </div>
+      <div class="service-item reveal">
+        <span class="service-num">02</span>
+        <span class="service-name">Art Direction</span>
+        <span class="service-desc">Guiding visual narratives for campaigns, editorials, and brand stories.</span>
+      </div>
+      <div class="service-item reveal">
+        <span class="service-num">03</span>
+        <span class="service-name">Photography</span>
+        <span class="service-desc">Still images that hold time — documentary, portrait, landscape, and product.</span>
+      </div>
+      <div class="service-item reveal">
+        <span class="service-num">04</span>
+        <span class="service-name">Brand Identity</span>
+        <span class="service-desc">End-to-end identity systems that travel well across touchpoints and time.</span>
+      </div>
+      <div class="service-item reveal">
+        <span class="service-num">05</span>
+        <span class="service-name">Motion & Film</span>
+        <span class="service-desc">Moving image work that deepens what stills alone cannot say.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Marquee 2 -->
+  <div class="marquee-section">
+    <div class="marquee-track" style="animation-direction:reverse">
+      <div class="marquee-item">Let's collaborate <span>★</span></div>
+      <div class="marquee-item">Let's collaborate <span>★</span></div>
+      <div class="marquee-item">Let's collaborate <span>★</span></div>
+      <div class="marquee-item">Let's collaborate <span>★</span></div>
+      <div class="marquee-item">Let's collaborate <span>★</span></div>
+      <div class="marquee-item">Let's collaborate <span>★</span></div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <section id="contact">
+    <p class="contact-eyebrow reveal">Get in touch</p>
+    <h2 class="contact-title reveal">
+      Let's make<br><em>something</em><br>together
+    </h2>
+    <a href="mailto:hello@y.design" class="contact-btn reveal">Start a conversation</a>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-logo">Y.</div>
+    <ul class="footer-links">
+      <li><a href="#">Instagram</a></li>
+      <li><a href="#">Behance</a></li>
+      <li><a href="#">LinkedIn</a></li>
+      <li><a href="#">Dribbble</a></li>
+    </ul>
+    <p class="footer-copy">© 2024 Y. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // ─── Custom Cursor ──────────────────────────────────────────
+    const cursor = document.getElementById('cursor');
+    let mx = -100, my = -100, cx = -100, cy = -100;
+
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+    function animCursor() {
+      cx += (mx - cx) * 0.15;
+      cy += (my - cy) * 0.15;
+      cursor.style.left = cx + 'px';
+      cursor.style.top  = cy + 'px';
+      requestAnimationFrame(animCursor);
+    }
+    animCursor();
+
+    document.querySelectorAll('a, .work-item, button').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+    });
+    document.addEventListener('mouseleave', () => cursor.classList.add('hidden'));
+    document.addEventListener('mouseenter', () => cursor.classList.remove('hidden'));
+
+    // ─── Hero parallax ─────────────────────────────────────────
+    const heroBg = document.getElementById('heroBg');
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      if (heroBg) heroBg.style.transform = `scale(1.05) translateY(${y * 0.3}px)`;
+    }, { passive: true });
+
+    // ─── Scroll reveal ──────────────────────────────────────────
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ─── Nav shrink on scroll ───────────────────────────────────
+    const nav = document.querySelector('nav');
+    window.addEventListener('scroll', () => {
+      nav.style.padding = window.scrollY > 60
+        ? '18px 48px'
+        : '28px 48px';
+    }, { passive: true });
+  </script>
+</body>
+</html>
